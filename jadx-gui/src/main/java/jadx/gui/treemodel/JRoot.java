@@ -20,6 +20,10 @@ public class JRoot extends JNode {
 
 	private final JadxWrapper wrapper;
 
+	private String topLevelPackageName;
+
+	private JSources js;
+
 	private boolean flatPackages = false;
 
 	public JRoot(JadxWrapper wrapper) {
@@ -27,9 +31,15 @@ public class JRoot extends JNode {
 		update();
 	}
 
+	public String getTopLevelPackageName()
+	{
+		return topLevelPackageName;
+	}
 	public final void update() {
 		removeAllChildren();
-		add(new JSources(this, wrapper));
+		js = new JSources(this, wrapper);
+		topLevelPackageName = js.getFirstChild().toString();
+		add(js);
 
 		List<JResource> resList = getHierarchyResources(wrapper.getResources());
 		for (JResource jRes : resList) {
@@ -113,7 +123,13 @@ public class JRoot extends JNode {
 
 	@Override
 	public String makeString() {
-		File file = wrapper.getOpenFile();
-		return file != null ? file.getName() : "File not open";
+		//File file = wrapper.getOpenFile();
+		//return file != null ? file.getName() : "File not open";
+		return "JADX-Gui dynamic";
+	}
+
+	public JSources getSources()
+	{
+		return js;
 	}
 }

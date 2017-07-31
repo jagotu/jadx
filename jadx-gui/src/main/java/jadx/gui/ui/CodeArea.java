@@ -1,10 +1,14 @@
 package jadx.gui.ui;
 
+import com.sun.javafx.scene.shape.PathUtils;
 import jadx.api.CodePosition;
 import jadx.api.JavaNode;
+import jadx.cli.JadxCLI;
+import jadx.core.dex.info.ClassInfo;
 import jadx.gui.settings.JadxSettings;
 import jadx.gui.treemodel.JClass;
 import jadx.gui.treemodel.JNode;
+import jadx.gui.treemodel.JSources;
 import jadx.gui.utils.Position;
 
 import javax.swing.AbstractAction;
@@ -19,11 +23,14 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Caret;
 import javax.swing.text.DefaultCaret;
+import javax.swing.tree.TreeNode;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
+import java.io.File;
+import java.util.Enumeration;
 
 import org.fife.ui.rsyntaxtextarea.LinkGenerator;
 import org.fife.ui.rsyntaxtextarea.LinkGeneratorResult;
@@ -106,6 +113,13 @@ class CodeArea extends RSyntaxTextArea {
 				if (pos != null) {
 					return true;
 				}
+
+				if(((JClass) node).getCls().getImports().containsKey(token.getLexeme()))
+				{
+					return true;
+				}
+
+
 			}
 		}
 		return false;
@@ -257,25 +271,45 @@ class CodeArea extends RSyntaxTextArea {
 				}
 				final int sourceOffset = token.getOffset();
 				final Position defPos = getDefPosition(jCls, textArea, sourceOffset);
-				if (defPos == null) {
-					return null;
-				}
-				return new LinkGeneratorResult() {
-					@Override
-					public HyperlinkEvent execute() {
-						return new HyperlinkEvent(defPos, HyperlinkEvent.EventType.ACTIVATED, null,
-								defPos.getNode().makeLongString());
-					}
+				if (defPos != null) {
+					return new LinkGeneratorResult() {
+						@Override
+						public HyperlinkEvent execute() {
+							return new HyperlinkEvent(defPos, HyperlinkEvent.EventType.ACTIVATED, null,
+									defPos.getNode().makeLongString());
+						}
 
-					@Override
-					public int getSourceOffset() {
-						return sourceOffset;
-					}
-				};
+						@Override
+						public int getSourceOffset() {
+							return sourceOffset;
+						}
+					};
+				}
+
+				if(jCls.getCls().getImports().containsKey(token.getLexeme()))
+				{
+					final ClassInfo targetClass = jCls.getCls().getImports().get(token.getLexeme());
+					return new LinkGeneratorResult() {
+						@Override
+						public HyperlinkEvent execute() {
+							return new HyperlinkEvent(targetClass, HyperlinkEvent.EventType.ACTIVATED, null,
+									targetClass.getFullName());
+						}
+
+						@Override
+						public int getSourceOffset() {
+							return sourceOffset;
+						}
+					};
+				}
+
+
+
 			} catch (Exception e) {
 				LOG.error("isLinkAtOffset error", e);
 				return null;
 			}
+			return null;
 		}
 
 		@Override
@@ -283,6 +317,119 @@ class CodeArea extends RSyntaxTextArea {
 			Object obj = e.getSource();
 			if (obj instanceof Position) {
 				contentPanel.getTabbedPane().codeJump((Position) obj);
+				return;
+			}
+
+			if (obj instanceof ClassInfo)
+			{
+
+				//if the class is already loaded
+
+
+				//find nearest package
+
+
+				JNode traversal =  contentPanel.getTabbedPane().getMainWindow().getTreeRoot().getSources();
+
+
+				ClassInfo ci = (ClassInfo)obj;
+				StringBuilder sb = new StringBuilder(ci.getFullName().length());
+				String[] tokens = ci.getFullName().split("\\.");
+
+
+				sb.append(tokens[0]);
+				int currentToken;
+
+				boolean hasAChance = true;
+				JNode preferred = null;
+				for(currentToken = 1;currentToken<tokens.length;currentToken++) {
+					hasAChance = false;
+					Enumeration enumer = traversal.children();
+
+					while (enumer.hasMoreElements()) {
+						Object child = enumer.nextElement();
+						if (!(child instanceof JNode))
+							continue;
+
+						JNode childNode = (JNode) child;
+						if (childNode.getName().startsWith(sb.toString() + ".")) {
+							hasAChance = true;
+							preferred = childNode;
+						}
+						if (childNode.getName().equals(sb.toString())) {
+							traversal = childNode;
+							preferred = null;
+							sb.setLength(0);
+							hasAChance=true;
+							break;
+						}
+					}
+
+					if(!hasAChance)
+						break;
+
+					if(sb.length() != 0) sb.append(".");
+					sb.append(tokens[currentToken]);
+				}
+
+				String guessedFilename = null;
+				if(hasAChance) {
+
+					Enumeration enumer = traversal.children();
+
+					while (enumer.hasMoreElements()) {
+						Object child = enumer.nextElement();
+						if (!(child instanceof JClass))
+							continue;
+
+						JClass childNode = (JClass) child;
+						if (childNode.getFullName().equals(ci.getFullName())) {
+							contentPanel.getTabbedPane().codeJump(new Position(childNode.getRootClass(), 0));
+							return;
+						}
+					}
+				}
+
+				int pathLength = -sb.toString().split("\\.").length + 1;
+				if(preferred != null)
+				{
+					traversal = preferred;
+					pathLength += traversal.getName().split("\\.").length;
+
+				}
+				while(!(traversal instanceof JClass))
+				{
+					traversal = (JNode)traversal.getFirstChild();
+					pathLength += traversal.getName().split("\\.").length;
+				}
+				File f = ((JClass)traversal).getCls().getSourceFile();
+				for(int i = 0;i<pathLength;i++)
+				{
+					f = f.getParentFile();
+				}
+				for(int i = currentToken-1;i<tokens.length-1;i++)
+				{
+					f = new File(f, tokens[i]);
+				}
+				f = new File(f, tokens[tokens.length-1] + ".class");
+
+				LOG.error(f.getAbsolutePath());
+				if(f.exists())
+				{
+					contentPanel.getTabbedPane().getMainWindow().openFile(f);
+					hyperlinkUpdate(e);
+				} else {
+					if(contentPanel.getTabbedPane().getMainWindow().findFile(ci.getFullName()))
+					{
+						hyperlinkUpdate(e);
+					}
+				}
+
+
+
+
+
+
 			}
 		}
 	}

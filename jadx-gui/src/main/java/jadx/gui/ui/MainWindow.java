@@ -67,10 +67,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
-import java.util.Arrays;
-import java.util.EnumSet;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,6 +122,10 @@ public class MainWindow extends JFrame {
 
 	private DropTarget dropTarget;
 
+	public JRoot getTreeRoot()
+	{
+		return treeRoot;
+	}
 	public MainWindow(JadxSettings settings) {
 		this.wrapper = new JadxWrapper(settings);
 		this.settings = settings;
@@ -143,9 +144,7 @@ public class MainWindow extends JFrame {
 		setLocationRelativeTo(null);
 		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
-		if (settings.getInput().isEmpty()) {
-			openFile();
-		} else {
+		if (!settings.getInput().isEmpty()) {
 			openFile(settings.getInput().get(0));
 		}
 	}
@@ -175,6 +174,29 @@ public class MainWindow extends JFrame {
 		String description = "supported files: " + Arrays.toString(exts).replace('[', '(').replace(']', ')');
 		fileChooser.setFileFilter(new FileNameExtensionFilter(description, exts));
 		fileChooser.setToolTipText(NLS.str("file.open"));
+		fileChooser.setMultiSelectionEnabled(true);
+		String currentDirectory = settings.getLastOpenFilePath();
+		if (!currentDirectory.isEmpty()) {
+			fileChooser.setCurrentDirectory(new File(currentDirectory));
+		}
+		int ret = fileChooser.showDialog(mainPanel, NLS.str("file.open"));
+		if (ret == JFileChooser.APPROVE_OPTION) {
+
+			settings.setLastOpenFilePath(fileChooser.getCurrentDirectory().getPath());
+			openFiles(Arrays.asList(fileChooser.getSelectedFiles()));
+
+		}
+	}
+
+	public boolean findFile(String fileName)
+	{
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setAcceptAllFileFilterUsed(true);
+		String[] exts = {"apk", "dex", "jar", "class", "zip", "aar"};
+		String description = "supported files: " + Arrays.toString(exts).replace('[', '(').replace(']', ')');
+		fileChooser.setFileFilter(new FileNameExtensionFilter(description, exts));
+		fileChooser.setToolTipText("Select location of " + fileName);
+		fileChooser.setDialogTitle("Select location of " + fileName);
 		String currentDirectory = settings.getLastOpenFilePath();
 		if (!currentDirectory.isEmpty()) {
 			fileChooser.setCurrentDirectory(new File(currentDirectory));
@@ -183,19 +205,37 @@ public class MainWindow extends JFrame {
 		if (ret == JFileChooser.APPROVE_OPTION) {
 			settings.setLastOpenFilePath(fileChooser.getCurrentDirectory().getPath());
 			openFile(fileChooser.getSelectedFile());
+			return true;
 		}
+		return false;
 	}
 
 	public void openFile(File file) {
-		tabbedPane.closeAllTabs();
-		resetCache();
+		//tabbedPane.closeAllTabs();
+		openFiles(Collections.singletonList(file));
+		/*resetCache();
 		wrapper.openFile(file);
 		deobfToggleBtn.setSelected(settings.isDeobfuscationOn());
 		settings.addRecentFile(file.getAbsolutePath());
 		initTree();
 		setTitle(DEFAULT_TITLE + " - " + file.getName());
+		runBackgroundJobs();*/
+	}
+
+	public void openFiles(List<File> files)
+	{
+		resetCache();
+		for(File file : files) {
+			wrapper.openFile(file);
+			deobfToggleBtn.setSelected(settings.isDeobfuscationOn());
+			settings.addRecentFile(file.getAbsolutePath());
+		}
+		initTree();
+		setTitle(DEFAULT_TITLE + " - " + treeRoot.getTopLevelPackageName());
 		runBackgroundJobs();
 	}
+
+
 
 	protected void resetCache() {
 		cacheObject.reset();

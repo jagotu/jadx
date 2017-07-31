@@ -57,6 +57,7 @@ public final class JadxDecompiler {
 
 	private File outDir;
 
+
 	private RootNode root;
 	private List<IDexTreeVisitor> passes;
 	private CodeGen codeGen;
@@ -69,6 +70,8 @@ public final class JadxDecompiler {
 	private Map<ClassNode, JavaClass> classesMap = new HashMap<ClassNode, JavaClass>();
 	private Map<MethodNode, JavaMethod> methodsMap = new HashMap<MethodNode, JavaMethod>();
 	private Map<FieldNode, JavaField> fieldsMap = new HashMap<FieldNode, JavaField>();
+
+	private boolean dirty = true;
 
 	public JadxDecompiler() {
 		this(new JadxArgs());
@@ -207,7 +210,7 @@ public final class JadxDecompiler {
 		if (root == null) {
 			return Collections.emptyList();
 		}
-		if (classes == null) {
+		if (dirty) {
 			List<ClassNode> classNodeList = root.getClasses(false);
 			List<JavaClass> clsList = new ArrayList<JavaClass>(classNodeList.size());
 			classesMap.clear();
@@ -278,10 +281,11 @@ public final class JadxDecompiler {
 	}
 
 	void parse() throws DecodeException {
-		reset();
+		//reset();
+		dirty = true;
 		init();
 
-		root = new RootNode(args);
+		if(root == null) root = new RootNode(args);
 		LOG.info("loading ...");
 		root.load(inputFiles);
 

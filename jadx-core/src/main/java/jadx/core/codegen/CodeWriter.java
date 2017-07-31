@@ -46,6 +46,8 @@ public class CodeWriter {
 	private Map<CodePosition, Object> annotations = Collections.emptyMap();
 	private Map<Integer, Integer> lineMap = Collections.emptyMap();
 
+
+
 	public CodeWriter() {
 		this.indent = 0;
 		this.indentStr = "";

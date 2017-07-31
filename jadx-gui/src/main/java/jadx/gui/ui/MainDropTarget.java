@@ -62,7 +62,7 @@ public class MainDropTarget implements DropTargetListener {
 			if (transferData != null && transferData.size() > 0) {
 				dtde.dropComplete(true);
 				// load first file
-				mainWindow.openFile(transferData.get(0));
+				mainWindow.openFiles(transferData);
 			}
 		} catch (Exception e) {
 			LOG.error("File drop operation failed", e);

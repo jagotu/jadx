@@ -1,9 +1,10 @@
 ## JADX
 
-[![Build Status](https://travis-ci.org/skylot/jadx.png?branch=master)](https://travis-ci.org/skylot/jadx)
-[![Build Status](https://drone.io/github.com/skylot/jadx/status.png)](https://drone.io/github.com/skylot/jadx/latest)
-[![Code Coverage](https://codecov.io/gh/skylot/jadx/branch/master/graph/badge.svg)](https://codecov.io/gh/skylot/jadx)
-[![Coverity Scan Build Status](https://scan.coverity.com/projects/2166/badge.svg)](https://scan.coverity.com/projects/2166)
+This fork of JADX has these additional features:
+* Ability to open multiple files at once
+* When opening a new file, it's loaded without unloading the previous files
+* Automatic class search - Ctrl+Clicking on an imported class name will attempt to find the class file. If it isn't found, you can manually supply a path to it.
+
 [![License](http://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
 
 **jadx** - Dex to Java decompiler
@@ -11,12 +12,6 @@
 Command line and GUI tools for produce Java source code from Android Dex and Apk files
 
 ![jadx-gui screenshot](http://skylot.github.io/jadx/jadx-gui.png)
-
-### Downloads
-- [unstable](https://drone.io/github.com/skylot/jadx/files)
-- from [github](https://github.com/skylot/jadx/releases)
-- from [sourceforge](http://sourceforge.net/projects/jadx/files/)
-
 
 ### Building from source
     git clone https://github.com/skylot/jadx.git

@@ -20,13 +20,7 @@ import jadx.core.dex.nodes.parser.StaticValuesParser;
 import jadx.core.utils.exceptions.DecodeException;
 import jadx.core.utils.exceptions.JadxRuntimeException;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.TestOnly;
@@ -52,6 +46,20 @@ public class ClassNode extends LineAttrNode implements ILoadable, IDexNode {
 
 	private final List<MethodNode> methods;
 	private final List<FieldNode> fields;
+	private Map<String, ClassInfo> imports = new HashMap<String, ClassInfo>();
+
+	public void addImports(Collection<ClassInfo> imports)
+	{
+		for(ClassInfo info : imports)
+		{
+			this.imports.put(info.getShortName(), info);
+		}
+	}
+
+	public Map<String, ClassInfo> getImports() {
+		return imports;
+	}
+
 	private List<ClassNode> innerClasses = Collections.emptyList();
 
 	// store decompiled code

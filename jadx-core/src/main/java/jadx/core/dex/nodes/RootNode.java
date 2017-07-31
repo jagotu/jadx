@@ -48,7 +48,7 @@ public class RootNode {
 	}
 
 	public void load(List<InputFile> inputFiles) throws DecodeException {
-		dexNodes = new ArrayList<DexNode>();
+		if(dexNodes == null) dexNodes = new ArrayList<DexNode>();
 		for (InputFile input : inputFiles) {
 			for (DexFile dexFile : input.getDexFiles()) {
 				try {
@@ -106,15 +106,20 @@ public class RootNode {
 			if (this.clsp == null) {
 				ClspGraph clsp = new ClspGraph();
 				clsp.load();
-
-				List<ClassNode> classes = new ArrayList<ClassNode>();
-				for (DexNode dexNode : dexNodes) {
-					classes.addAll(dexNode.getClasses());
-				}
-				clsp.addApp(classes);
-
 				this.clsp = clsp;
 			}
+
+			List<ClassNode> classes = new ArrayList<ClassNode>();
+			for (DexNode dexNode : dexNodes) {
+				if(!dexNode.clspLoaded) {
+					classes.addAll(dexNode.getClasses());
+					dexNode.clspLoaded = true;
+				}
+			}
+			this.clsp.addApp(classes);
+
+
+
 		} catch (IOException e) {
 			throw new DecodeException("Error loading classpath", e);
 		}

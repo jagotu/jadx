@@ -36,6 +36,9 @@ public class DexNode implements IDexNode {
 	private final Dex dexBuf;
 	private final DexFile file;
 
+	private boolean classesLoaded = false;
+	public boolean clspLoaded = false;
+
 	private final List<ClassNode> classes = new ArrayList<ClassNode>();
 	private final Map<ClassInfo, ClassNode> clsMap = new HashMap<ClassInfo, ClassNode>();
 
@@ -48,6 +51,8 @@ public class DexNode implements IDexNode {
 	}
 
 	public void loadClasses() throws DecodeException {
+		if(classesLoaded) return;
+		classesLoaded = true;
 		for (ClassDef cls : dexBuf.classDefs()) {
 			ClassNode clsNode = new ClassNode(this, cls);
 			classes.add(clsNode);

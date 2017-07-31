@@ -4,10 +4,12 @@ import jadx.core.codegen.CodeWriter;
 import jadx.core.dex.attributes.AFlag;
 import jadx.core.dex.attributes.nodes.LineAttrNode;
 import jadx.core.dex.info.AccessInfo;
+import jadx.core.dex.info.ClassInfo;
 import jadx.core.dex.nodes.ClassNode;
 import jadx.core.dex.nodes.FieldNode;
 import jadx.core.dex.nodes.MethodNode;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -26,6 +28,7 @@ public final class JavaClass implements JavaNode {
 	private List<JavaClass> innerClasses = Collections.emptyList();
 	private List<JavaField> fields = Collections.emptyList();
 	private List<JavaMethod> methods = Collections.emptyList();
+	private Map<String, ClassInfo> imports = Collections.emptyMap();
 
 	JavaClass(ClassNode classNode, JadxDecompiler decompiler) {
 		this.decompiler = decompiler;
@@ -115,6 +118,8 @@ public final class JavaClass implements JavaNode {
 			});
 			this.methods = Collections.unmodifiableList(mths);
 		}
+
+
 	}
 
 	private JadxDecompiler getRootDecompiler() {
@@ -246,8 +251,41 @@ public final class JavaClass implements JavaNode {
 		return methods;
 	}
 
+	public Map<String, ClassInfo> getImports() {
+		decompile();
+		loadImports();
+		return imports;
+	}
+
+	private boolean importsLoaded = false;
+	private void loadImports() {
+		if(!importsLoaded)
+		{
+			if(cls.getImports() != null)
+			{
+				int importsCount = cls.getImports().size();
+				if(importsCount != 0)
+				{
+					this.imports = Collections.unmodifiableMap(cls.getImports());
+				}
+			}
+
+			if(this.imports == null)
+			{
+				this.imports = Collections.emptyMap();
+			}
+
+			importsLoaded = true;
+		}
+	}
+
 	public int getDecompiledLine() {
 		return cls.getDecompiledLine();
+	}
+
+	public File getSourceFile()
+	{
+		return cls.dex().getDexFile().getInputFile().getFile();
 	}
 
 	@Override

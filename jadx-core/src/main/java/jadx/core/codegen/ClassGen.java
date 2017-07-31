@@ -95,6 +95,8 @@ public class ClassGen {
 			}
 			Collections.sort(sortImports);
 
+			cls.addImports(imports);
+
 			for (String imp : sortImports) {
 				clsCode.startLine("import ").add(imp).add(';');
 			}
